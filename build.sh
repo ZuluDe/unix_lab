@@ -6,30 +6,24 @@ if [ -z "$1" ] || [ ! -e "$1" ]; then
 fi
 
 file="$1"
-dir="$PWD"
+dir=$(cd "$(dirname "$file")" && pwd)
 filename="${file##*/}"
-
-out=$(grep -m 1 -E "(//|/\*|%).*Output:" "$file" | sed 's/.*Output:[[:space:]]*//; s/\*\/.*//' | awk '{print $1}' | tr -d '\r')
+out=$(grep -m 1 -E "(//|/\*|%).*Output:" "$file" | sed 's/.*Output:[[:space:]]*//' | tr -d '\r')
 
 if [ -z "$out" ]; then
     echo "Ошибка! Не найден Output" >&2
     exit 2
 fi
 
-tmp=""
+tmp=$(mktemp -d)
 
 exit_handler() {
-    code=$?
+    local code=$?
     trap - EXIT
-    if [ -n "$tmp" ]; then
-        rm -rf "$tmp"
-    fi
+    rm -rf "$tmp"
     exit "$code"
 }
-
-trap exit_handler EXIT HUP INT QUIT PIPE TERM ABRT ALRM USR1 USR2
-
-tmp=$(mktemp -d)
+trap exit_handler EXIT HUP INT QUIT PIPE TERM
 
 cp "$file" "$tmp/"
 cd "$tmp"
@@ -37,18 +31,18 @@ ext="${filename##*.}"
 
 case "$ext" in
     c)
-        gcc "$filename" -o "$out"
-        ;;
+    gcc "$filename" -o "$out"
+    ;;
     cpp|cc|cxx)
-        g++ "$filename" -o "$out"
-        ;;
+    g++ "$filename" -o "$out"
+    ;;
     tex)
-        pdflatex -interaction=nonstopmode -jobname="${out%.*}" "$filename"
-        ;;
+    pdflatex -interaction=nonstopmode -jobname="${out%.*}" "$filename"
+    ;;
     *)
-        echo "Ошибка! Неизвестный тип файла ($ext). Поддерживаются: c, cpp, cc, cxx, tex" >&2
-        exit 3
-        ;;
+    echo "Ошибка! Неизвестный тип файла ($ext)" >&2
+    exit 3
+    ;;
 esac
 
 mv "$out" "$dir/"
