@@ -3,9 +3,9 @@ FROM alpine:3.20
 RUN apk add --no-cache flock
 
 WORKDIR /app
-COPY script.sh /app/script.sh
-RUN chmod +x /app/script.sh
+COPY lab_two.sh /app/lab_two.sh
+RUN chmod +x /app/lab_two.sh
 
 VOLUME ["/data"]
 
-ENTRYPOINT ["/bin/sh", "/app/script.sh"]
+ENTRYPOINT ["/bin/sh", "/app/lab_two.sh"]
